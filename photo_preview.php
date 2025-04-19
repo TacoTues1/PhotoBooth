@@ -29,6 +29,9 @@ unset($_SESSION['photo_data']); // Clear the session data after use
       font-size: 1.5rem;
       color: #0056b3 !important;
     }
+    .hidden {
+  display: none !important;
+}
 </style>
 <body>
     <!-- Modern Navigation Bar -->
@@ -65,6 +68,21 @@ unset($_SESSION['photo_data']); // Clear the session data after use
             <button id="deletePhoto" class="btn btn-danger d-inline">Retake Photo</button>
             <button id="takeAnotherPhoto" class="btn btn-warning d-inline">Take Another Photo</button>
         </div>
+        <div class="container mt-4">
+    <h3 class="text-center">Select a Template</h3>
+    <div class="row">
+        <div class="col-md-4">
+            <img src="templates/template1.png" alt="Template 1" class="img-fluid template" data-template="template1.png">
+        </div>
+        <div class="col-md-4">
+            <img src="template2.png" alt="Template 2" class="img-fluid template" data-template="template2.png">
+        </div>
+        <div class="col-md-4">
+            <img src="template3.png" alt="Template 3" class="img-fluid template" data-template="template3.png">
+        </div>
+    </div>
+    <button id="applyTemplate" class="btn btn-success mt-3">Apply Selected Template</button>
+</div>
     </div>
 
     <!-- Loading Animation -->
@@ -78,6 +96,41 @@ unset($_SESSION['photo_data']); // Clear the session data after use
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        let selectedTemplate = '';
+
+document.querySelectorAll('.template').forEach(item => {
+    item.addEventListener('click', (e) => {
+        selectedTemplate = e.target.getAttribute('data-template');
+        alert(`Template selected: ${selectedTemplate}`);
+    });
+});
+
+document.getElementById('applyTemplate').addEventListener('click', () => {
+    if (selectedTemplate) {
+        const previewCanvas = document.getElementById('previewCanvas');
+        const previewContext = previewCanvas.getContext('2d');
+        const templateImage = new Image();
+        templateImage.src = selectedTemplate;
+
+        // Load selected template image
+        templateImage.onload = () => {
+            previewCanvas.width = templateImage.width;
+            previewCanvas.height = templateImage.height;
+            previewContext.drawImage(templateImage, 0, 0);
+            
+            // Draw the user's photo on top
+            const img = new Image();
+            img.src = photoData;  // Assuming photoData contains the photo's data URL
+            img.onload = () => {
+                // Adjust the user's photo size and position
+                previewContext.drawImage(img, 50, 50, 100, 100);  // Position and size of the photo
+            };
+        };
+    } else {
+        alert('Please select a template first!');
+    }
+});
+
         const photoData = "<?php echo $photo_data; ?>";
         const previewCanvas = document.getElementById('previewCanvas');
         const previewContext = previewCanvas.getContext('2d');
@@ -128,36 +181,38 @@ unset($_SESSION['photo_data']); // Clear the session data after use
 
         // Save photo functionality
         document.getElementById('saveForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+    e.preventDefault();
 
-            const saveLoadingAnimation = document.getElementById('saveLoadingAnimation');
-            saveLoadingAnimation.classList.remove('hidden');
+    const saveLoadingAnimation = document.getElementById('saveLoadingAnimation');
+    saveLoadingAnimation.classList.remove('hidden');
 
-            const photoData = document.getElementById('photoData').value;
+    // Simulate loading for 2 seconds before proceeding
+    setTimeout(async () => {
+        const photoData = document.getElementById('photoData').value;
 
-            try {
-                const response = await fetch('upload_photo.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: `photo_data=${encodeURIComponent(photoData)}`
-                });
+        try {
+            const response = await fetch('upload_photo.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `photo_data=${encodeURIComponent(photoData)}`
+            });
 
-                const result = await response.text();
-                saveLoadingAnimation.classList.add('hidden');
+            saveLoadingAnimation.classList.add('hidden');
 
-                if (response.ok) {
-                    // alert('Photo successfully saved to the database!');
-                    window.location.href = 'gallery.php';
-                } else {
-                    // alert('Failed to save the photo. Please try again.');
-                    console.error('Error:', result);
-                }
-            } catch (error) {
-                saveLoadingAnimation.classList.add('hidden');
-                // alert('An error occurred while saving the photo. Please try again.');
-                console.error('Error:', error);
+            if (response.ok) {
+                // alert('Photo successfully saved to the database!');
+                window.location.href = 'gallery.php';
+            } else {
+                // alert('Failed to save the photo. Please try again.');
+                console.error('Error:', await response.text());
             }
-        });
+        } catch (error) {
+            saveLoadingAnimation.classList.add('hidden');
+            // alert('An error occurred while saving the photo. Please try again.');
+            console.error('Error:', error);
+        }
+    }, 2000);
+});
     </script>
 </body>
 </html>
