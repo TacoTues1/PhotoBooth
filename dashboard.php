@@ -13,291 +13,136 @@ $conn->close();
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>PhotoBooth Dashboard</title>
+  <title>PhotoBooth Templates</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
   <style>
-    body {
-      background: linear-gradient(135deg, #f0f4ff, #d0e8ff);
-      font-family: 'Segoe UI', sans-serif;
-      overflow-x: hidden;
+    /* Sliding Templates Container */
+    .template-train-container {
+    position: relative;
+    width: 100%;
+    overflow: hidden; /* Hide templates outside the container */
+    height: 300px; /* Set a fixed height for the train */
+    margin-bottom: 3rem; 
     }
 
-    h2 {
-      animation: fadeInDown 1s ease-in-out;
+    .template-train {
+      display: flex;
+      animation: slideTemplates 20s linear infinite; /* Slower slide animation */
+      width: calc(200%); /* Double the width to fit the duplicated templates */
     }
 
-    .hidden {
-      display: none !important;
+    .template-train img {
+      max-width: 300px;
+      max-height: 300px;
+      margin: 0 40px; /* Add spacing between templates */
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     }
 
-    .photo-layout img {
-      width: 100%;
-      border-radius: 12px;
-      transition: transform 0.3s ease;
+    /* Sliding Animation */
+    @keyframes slideTemplates {
+      0% {
+        transform: translateX(0); /* Start at the initial position */
+      }
+      100% {
+        transform: translateX(-50%); /* Move left by half the width (one set of templates) */
+      }
     }
 
-    .photo-layout img:hover {
-      transform: scale(1.05);
-    }
-
+    /* START Button */
     .btn {
-      transition: transform 0.2s ease-in-out;
+      transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
     }
 
     .btn:hover {
-      transform: scale(1.05);
+      transform: translateY(-3px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    /* Welcome Text Styling */
+    .welcome-text {
+      margin-top: 4%;
+      animation: bounce 2s infinite;
     }
 
-    #cameraSection,
-    #photoPreview {
-      animation: fadeInUp 1s ease-in-out;
+    .welcome-text h1 {
+      font-family: 'Dancing Script', cursive; /* Use Dancing Script for the Welcome text */
+      font-size: 4rem; /* Adjust font size for a bold and fancy look */
+      color: #0056b3; /* Blue color for the text */
     }
 
-    @keyframes fadeInDown {
-      from { opacity: 0; transform: translateY(-30px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(30px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    #timerOverlay {
-      font-size: 4rem;
-      background: rgba(0, 0, 0, 0.6);
-      padding: 10px 20px;
-      border-radius: 10px;
-      animation: pulse 1s infinite ease-in-out;
-    }
-
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.1); }
-    }
-
-    .navbar-brand {
-      font-weight: bold;
-      font-size: 1.5rem;
-      color: #0056b3 !important;
-    }
-
-    .spinner-border {
-      width: 3rem;
-      height: 3rem;
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+      }
+      40% {
+        transform: translateY(-30px);
+      }
+      60% {
+        transform: translateY(-15px);
+      }
     }
   </style>
 </head>
 <body>
 
 <!-- Navigation -->
-<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="#">📸 PhotoBooth</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav me-auto">
-        <li class="nav-item"><a class="nav-link active" href="dashboard.php">Dashboard</a></li>
-        <li class="nav-item"><a class="nav-link" href="gallery.php">Gallery</a></li>
-      </ul>
-      <form action="logout.php" method="POST">
-        <button type="submit" class="btn btn-outline-danger">Logout</button>
-      </form>
-    </div>
-  </div>
-</nav>
+<?php include 'Header.php'; ?>
 
-<div class="container mt-5">
-
-  <!-- Layout Selection -->
-  <div id="layoutSelection">
-    <h2 class="text-center mb-4">✨ Choose Your Layout</h2>
-    <div class="text-center mb-4">
-      <label for="layoutSelect" class="form-label">Select Layout:</label>
-      <select id="layoutSelect" class="form-select w-50 mx-auto shadow">
-        <option value="1">1 Photo</option>
-        <option value="2">2 Photos</option>
-        <option value="3">3 Photos</option>
-        <option value="4" selected>4 Photos</option>
-      </select>
-    </div>
-    <div class="text-center">
-      <button id="continueButton" class="btn btn-primary btn-lg shadow">Continue</button>
-    </div>
-  </div>
-
-  <!-- Camera Section -->
-  <div id="cameraSection" class="hidden mt-5">
-    <h2 class="text-center mb-4">📷 Smile for the Camera!</h2>
-    <div class="text-center mb-4">
-      <label for="timerSelect" class="form-label">Set Timer:</label>
-      <select id="timerSelect" class="form-select w-50 mx-auto shadow">
-        <option value="0" selected>No Timer</option>
-        <option value="3">3 Seconds</option>
-        <option value="5">5 Seconds</option>
-        <option value="10">10 Seconds</option>
-      </select>
-    </div>
-    <div class="d-flex justify-content-center align-items-start gap-4 flex-wrap">
-      <div class="position-relative shadow rounded" style="width: 320px; height: 240px; overflow: hidden;">
-        <video id="webcam" autoplay playsinline class="w-100 h-100 rounded"></video>
-        <div id="timerOverlay" class="position-absolute top-50 start-50 translate-middle text-white fw-bold" style="display: none;"></div>
-      </div>
-      <div class="photo-layout border p-3 rounded shadow bg-white" id="photoLayout" style="width: 320px; min-height: 240px;"></div>
-    </div>
-    <div class="text-center mt-4">
-      <button id="capture" class="btn btn-success btn-lg shadow">Capture Photo</button>
-    </div>
-  </div>
-
-  <!-- Photo Preview Section -->
-  <div id="photoPreview" class="hidden mt-5">
-    <h2 class="text-center mb-4">🖼️ Photo Preview</h2>
-    <div class="text-center">
-      <canvas id="previewCanvas" class="border shadow rounded"></canvas>
-    </div>
-    <div class="text-center mt-4">
-      <button id="applyFilter" class="btn btn-primary">Apply Filter</button>
-      <button id="addText" class="btn btn-secondary">Add Text</button>
-      <form action="upload_photo.php" method="POST" enctype="multipart/form-data" class="mt-4">
-        <input type="hidden" name="photo_data" id="photoData">
-        <button type="submit" class="btn btn-success">Save Photo</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- Loading Animation -->
-  <div id="loadingAnimation" class="hidden text-center mt-5">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
-    <p class="mt-3 fw-bold">Preparing your photo preview...</p>
-  </div>
-
+<!-- Welcome Text -->
+<div class="welcome-text text-center">
+  <h1 class="display-1">Welcome</h1>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Sliding Templates -->
+<div id="templateTrain" class="template-train-container text-center mt-5">
+  <div class="template-train">
+    <!-- Templates will be dynamically added here -->
+  </div>
+</div>
+
+<!-- START Button -->
+<div class="text-center mt-4">
+  <a href="HomePage.php" class="btn btn-primary btn-lg">START</a>
+</div>
+<?php include 'footer.php'; ?>
 <script>
-  const layoutSelection = document.getElementById('layoutSelection');
-  const cameraSection = document.getElementById('cameraSection');
-  const photoPreview = document.getElementById('photoPreview');
-  const loadingAnimation = document.getElementById('loadingAnimation');
-  const continueButton = document.getElementById('continueButton');
-  const layoutSelect = document.getElementById('layoutSelect');
-  const timerSelect = document.getElementById('timerSelect');
-  const webcam = document.getElementById('webcam');
-  const captureButton = document.getElementById('capture');
-  const photoLayout = document.getElementById('photoLayout');
-  const photoDataInput = document.getElementById('photoData');
-  const timerOverlay = document.getElementById('timerOverlay');
+  document.addEventListener('DOMContentLoaded', () => {
+    const templateTrain = document.querySelector('.template-train');
 
-  let maxPhotos = 4;
+    // Dynamically load templates from the templates folder
+    const templates = <?php
+      $templateFiles = array();
+      $templateDir = __DIR__ . '/templates';
+      if (is_dir($templateDir)) {
+          foreach (scandir($templateDir) as $file) {
+              if (in_array(pathinfo($file, PATHINFO_EXTENSION), ['png', 'jpg', 'jpeg', 'gif'])) {
+                  $templateFiles[] = 'templates/' . $file;
+              }
+          }
+      }
+      echo json_encode($templateFiles);
+    ?>;
 
-  const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get('retake') === 'true') {
-    layoutSelection.classList.add('hidden');
-    cameraSection.classList.remove('hidden');
-  }
-
-  continueButton.addEventListener('click', () => {
-    maxPhotos = parseInt(layoutSelect.value);
-    layoutSelection.classList.add('hidden');
-    cameraSection.classList.remove('hidden');
-  });
-
-  navigator.mediaDevices.getUserMedia({ video: true })
-    .then(stream => {
-      webcam.srcObject = stream;
-    })
-    .catch(err => {
-      console.error('Error accessing webcam:', err);
+    // Add templates to the train
+    templates.forEach((template) => {
+      const img = document.createElement('img');
+      img.src = template;
+      img.alt = 'Template';
+      img.classList.add('img-fluid');
+      templateTrain.appendChild(img);
     });
 
-  captureButton.addEventListener('click', () => {
-    const timerValue = parseInt(timerSelect.value);
-    let photosCaptured = 0;
-    captureButton.disabled = true;
-
-    function startCapture() {
-      if (photosCaptured < maxPhotos) {
-        if (timerValue > 0) {
-          let countdown = timerValue;
-          timerOverlay.style.display = 'block';
-          const countdownInterval = setInterval(() => {
-            timerOverlay.textContent = countdown;
-            countdown--;
-            if (countdown < 0) {
-              clearInterval(countdownInterval);
-              timerOverlay.style.display = 'none';
-              capturePhoto();
-              photosCaptured++;
-              startCapture();
-            }
-          }, 1000);
-        } else {
-          capturePhoto();
-          photosCaptured++;
-          startCapture();
-        }
-      } else {
-        captureButton.disabled = false;
-      }
-    }
-
-    startCapture();
-  });
-
-  function capturePhoto() {
-    if (photoLayout.children.length < maxPhotos) {
-      const canvas = document.createElement('canvas');
-      canvas.width = webcam.videoWidth;
-      canvas.height = webcam.videoHeight;
-      const context = canvas.getContext('2d');
-      context.drawImage(webcam, 0, 0, canvas.width, canvas.height);
-
+    // Duplicate templates for seamless sliding
+    templates.forEach((template) => {
       const img = document.createElement('img');
-      img.src = canvas.toDataURL('image/png');
-      photoLayout.appendChild(img);
-
-      if (photoLayout.children.length === maxPhotos) {
-        const combinedCanvas = document.createElement('canvas');
-        combinedCanvas.width = webcam.videoWidth;
-        combinedCanvas.height = webcam.videoHeight * maxPhotos;
-        const combinedContext = combinedCanvas.getContext('2d');
-
-        const images = Array.from(photoLayout.children);
-        let loadedCount = 0;
-
-        images.forEach((child, index) => {
-          const photo = new Image();
-          photo.src = child.src;
-          photo.onload = () => {
-            combinedContext.drawImage(photo, 0, index * webcam.videoHeight, webcam.videoWidth, webcam.videoHeight);
-            loadedCount++;
-            if (loadedCount === maxPhotos) {
-              cameraSection.classList.add('hidden');
-              loadingAnimation.classList.remove('hidden');
-
-              const photoDataURL = combinedCanvas.toDataURL('image/png');
-              photoDataInput.value = photoDataURL;
-
-              setTimeout(() => {
-                fetch('save_photo_data.php', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ photo_data: photoDataURL })
-                }).then(() => {
-                  window.location.href = 'photo_preview.php';
-                });
-              }, 2000);
-            }
-          };
-        });
-      }
-    }
-  }
+      img.src = template;
+      img.alt = 'Template';
+      img.classList.add('img-fluid');
+      templateTrain.appendChild(img);
+    });
+  });
 </script>
 </body>
 </html>

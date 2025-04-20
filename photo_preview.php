@@ -30,8 +30,16 @@ unset($_SESSION['photo_data']); // Clear the session data after use
       color: #0056b3 !important;
     }
     .hidden {
-  display: none !important;
-}
+    display: none !important;
+    }
+    .template {
+        width: 100px; /* Set the desired width */
+        height: auto; /* Maintain aspect ratio */
+    }
+    .template.selected {
+        border: 3px solid #007bff; /* Blue border for selection */
+        border-radius: 5px;
+    }
 </style>
 <body>
     <!-- Modern Navigation Bar -->
@@ -69,20 +77,20 @@ unset($_SESSION['photo_data']); // Clear the session data after use
             <button id="takeAnotherPhoto" class="btn btn-warning d-inline">Take Another Photo</button>
         </div>
         <div class="container mt-4">
-    <h3 class="text-center">Select a Template</h3>
-    <div class="row">
-        <div class="col-md-4">
-            <img src="templates/template1.png" alt="Template 1" class="img-fluid template" data-template="template1.png">
+            <h3 class="text-center">Select a Template</h3>
+            <div class="row">
+                <div class="col-md-4">
+                    <img src="templates/template1.png" alt="Template 1" class="img-fluid template" data-template="template1.png">
+                </div>
+                <div class="col-md-4">
+                    <img src="templates/template2.png" alt="Template 2" class="img-fluid template" data-template="template2.png">
+                </div>
+                <div class="col-md-4">
+                    <img src="templates/template3.png" alt="Template 3" class="img-fluid template" data-template="template3.png">
+                </div>
+            </div>
+            <button id="applyTemplate" class="btn btn-success mt-3">Apply Selected Template</button>
         </div>
-        <div class="col-md-4">
-            <img src="template2.png" alt="Template 2" class="img-fluid template" data-template="template2.png">
-        </div>
-        <div class="col-md-4">
-            <img src="template3.png" alt="Template 3" class="img-fluid template" data-template="template3.png">
-        </div>
-    </div>
-    <button id="applyTemplate" class="btn btn-success mt-3">Apply Selected Template</button>
-</div>
     </div>
 
     <!-- Loading Animation -->
@@ -96,34 +104,50 @@ unset($_SESSION['photo_data']); // Clear the session data after use
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        let selectedTemplate = '';
+    let selectedTemplate = '';
 
-document.querySelectorAll('.template').forEach(item => {
-    item.addEventListener('click', (e) => {
-        selectedTemplate = e.target.getAttribute('data-template');
-        alert(`Template selected: ${selectedTemplate}`);
+    document.querySelectorAll('.template').forEach(item => {
+        item.addEventListener('click', (e) => {
+            // Remove the 'selected' class from all templates
+            document.querySelectorAll('.template').forEach(template => {
+                template.classList.remove('selected');
+            });
+
+            // Add the 'selected' class to the clicked template
+            e.target.classList.add('selected');
+
+            // Set the selected template
+            selectedTemplate = e.target.getAttribute('data-template');
+        });
     });
-});
 
-document.getElementById('applyTemplate').addEventListener('click', () => {
+    document.getElementById('applyTemplate').addEventListener('click', () => {
     if (selectedTemplate) {
         const previewCanvas = document.getElementById('previewCanvas');
         const previewContext = previewCanvas.getContext('2d');
         const templateImage = new Image();
         templateImage.src = selectedTemplate;
 
-        // Load selected template image
+        // Load the selected template image
         templateImage.onload = () => {
+            // Set canvas size to match the template
             previewCanvas.width = templateImage.width;
             previewCanvas.height = templateImage.height;
+
+            // Draw the template on the canvas
             previewContext.drawImage(templateImage, 0, 0);
-            
-            // Draw the user's photo on top
+
+            // Draw the user's photo on top of the template
             const img = new Image();
-            img.src = photoData;  // Assuming photoData contains the photo's data URL
+            img.src = photoData; // Assuming photoData contains the photo's data URL
             img.onload = () => {
                 // Adjust the user's photo size and position
-                previewContext.drawImage(img, 50, 50, 100, 100);  // Position and size of the photo
+                const photoWidth = previewCanvas.width * 0.8; // Scale photo to 80% of canvas width
+                const photoHeight = (img.height / img.width) * photoWidth; // Maintain aspect ratio
+                const photoX = (previewCanvas.width - photoWidth) / 2; // Center the photo horizontally
+                const photoY = (previewCanvas.height - photoHeight) / 2; // Center the photo vertically
+
+                previewContext.drawImage(img, photoX, photoY, photoWidth, photoHeight);
             };
         };
     } else {
