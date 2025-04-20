@@ -1,0 +1,23 @@
+[
+    {
+        "path": "templates/template1.png",
+        "type": "1X4"
+    },
+    {
+        "path": "templates/template2.png",
+        "type": "1X4"
+    },
+    {
+        "path": "templates/template3.png",
+        "type": "1X4"
+    },
+    {
+        "path": "templates/Photobooth frames April.png",
+        "type": "2X3"
+    },
+    {
+        "path": "templates/Photobooth frames Summer.png",
+        "type": "2X3"
+    }
+    
+]

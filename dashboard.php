@@ -1,7 +1,7 @@
 <?php
 include 'auth.php'; // Include authentication check
 $user_id = $_SESSION['user_id'];
-
+echo "<script>console.log('User ID: " . $user_id . "');</script>";
 $conn = new mysqli('localhost', 'root', '', 'photobooth');
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
