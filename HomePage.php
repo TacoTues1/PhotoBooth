@@ -6,6 +6,14 @@ $conn = new mysqli('localhost', 'root', '', 'photobooth');
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
+
+// Handle AJAX request to save the selected layout type in the session
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['layout_type'])) {
+  $_SESSION['layout_type'] = $_POST['layout_type'];
+  echo json_encode(['success' => true]);
+  exit();
+}
+
 $conn->close();
 ?>
 <!DOCTYPE html>
@@ -315,12 +323,30 @@ $conn->close();
       console.log('Selected Layout:', selectedLayout);
       console.log('Selected Layout Type:', selectedLayoutType);
 
-      // Set the number of takes to 8
-      maxPhotos = 8;
+      // Send the selected layout type to the server
+      fetch('save_layout.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ layout_type: selectedLayoutType })
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            console.log('Layout type saved to session.');
 
-      // Hide the layout selection and show the camera section
-      layoutSelection.classList.add('hidden');
-      cameraSection.classList.remove('hidden');
+            // Set the number of takes to 8
+            maxPhotos = 8;
+
+            // Hide the layout selection and show the camera section
+            layoutSelection.classList.add('hidden');
+            cameraSection.classList.remove('hidden');
+          } else {
+            console.error('Failed to save layout type.');
+          }
+        })
+        .catch(error => {
+          console.error('Error saving layout type:', error);
+        });
     }
   });
 });

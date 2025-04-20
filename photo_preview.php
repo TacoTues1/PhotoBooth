@@ -1,11 +1,40 @@
 <?php
 include 'auth.php';
-if (!isset($_SESSION['photo_data'])) {
-    header("Location: dashboard.php"); // Redirect back to dashboard if no photo data
+
+// Ensure the user is logged in
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php"); // Redirect to login if the user is not logged in
     exit();
 }
-$photo_data = $_SESSION['photo_data'];
-unset($_SESSION['photo_data']); // Clear the session data after use
+
+// Database connection
+$conn = new mysqli('localhost', 'root', '', 'photobooth');
+if ($conn->connect_error) {
+    die("Database connection failed: " . $conn->connect_error);
+}
+
+// Fetch all photos for the logged-in user
+$userId = $_SESSION['user_id'];
+$stmt = $conn->prepare("SELECT photo_path FROM photos WHERE user_id = ? ORDER BY captured_at DESC");
+$stmt->bind_param('i', $userId);
+$stmt->execute();
+$result = $stmt->get_result();
+
+$photos = [];
+while ($row = $result->fetch_assoc()) {
+    $photos[] = $row['photo_path'];
+}
+
+$stmt->close();
+$conn->close();
+
+if (empty($photos)) {
+    // Redirect to the dashboard if no photos are found
+    header("Location: dashboard.php");
+    exit();
+}
+
+$photoPath = $photos[0]; // Use the latest photo
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -15,81 +44,70 @@ unset($_SESSION['photo_data']); // Clear the session data after use
     <title>Photo Preview</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Google Fonts: Poppins -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
-</head>
-<style>
-    body {
-      background: linear-gradient(135deg, #f0f4ff, #d0e8ff);
-      font-family: 'Segoe UI', sans-serif;
-      overflow-x: hidden;
-    }
-    .navbar-brand {
-      font-weight: bold;
-      font-size: 1.5rem;
-      color: #0056b3 !important;
-    }
-    .hidden {
-    display: none !important;
-    }
-    .template {
-        width: 100px; /* Set the desired width */
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .hidden {
+            display: none !important;
+        }
+        .template {
+        width: 150px; /* Smaller width for templates */
         height: auto; /* Maintain aspect ratio */
-    }
-    .template.selected {
-        border: 3px solid #007bff; /* Blue border for selection */
-        border-radius: 5px;
-    }
-</style>
+        cursor: pointer;
+        margin: 0 auto; /* Center the template */
+        display: block; /* Ensure it appears as a block element */
+        }   
+        .template.selected {
+            border: 3px solid #007bff; /* Blue border for selection */
+            border-radius: 5px;
+        }
+        .preview-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+        }
+        .templates-container,
+        .photo-preview-container {
+            flex: 1;
+            max-width: 50%; /* Ensure both columns take up equal space */
+        }
+        canvas {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 100%; /* Ensure the canvas fits within its container */
+            height: auto; /* Maintain aspect ratio */
+        }
+    </style>
+</head>
 <body>
-    <!-- Modern Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="#">📸 PhotoBooth</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav me-auto">
-        <li class="nav-item"><a class="nav-link active" href="dashboard.php">Dashboard</a></li>
-        <li class="nav-item"><a class="nav-link" href="gallery.php">Gallery</a></li>
-      </ul>
-      <form action="logout.php" method="POST">
-        <button type="submit" class="btn btn-outline-danger">Logout</button>
-      </form>
-    </div>
-  </div>
-</nav>
+    <!-- Navigation Bar -->
+    <?php include 'Header.php'; ?>
 
-    <div class="container">
-        <h2 class="text-center mb-4" style="font-family: 'Poppins', sans-serif;">Photo Preview</h2>
-        <div class="text-center">
-            <canvas id="previewCanvas" class="border"></canvas>
-        </div>
-        <div class="text-center mt-4">
-            <button id="applyFilter" class="btn btn-primary">Apply Filter</button>
-            <button id="addText" class="btn btn-secondary">Add Text</button>
-            <form action="upload_photo.php" method="POST" enctype="multipart/form-data" class="mt-4 d-inline" id="saveForm">
-                <input type="hidden" name="photo_data" id="photoData" value="<?php echo $photo_data; ?>">
-                <button type="submit" class="btn btn-success">Save Photo</button>
-            </form>
-            <button id="deletePhoto" class="btn btn-danger d-inline">Retake Photo</button>
-            <button id="takeAnotherPhoto" class="btn btn-warning d-inline">Take Another Photo</button>
-        </div>
-        <div class="container mt-4">
-            <h3 class="text-center">Select a Template</h3>
-            <div class="row">
-                <div class="col-md-4">
-                    <img src="templates/template1.png" alt="Template 1" class="img-fluid template" data-template="template1.png">
-                </div>
-                <div class="col-md-4">
-                    <img src="templates/template2.png" alt="Template 2" class="img-fluid template" data-template="template2.png">
-                </div>
-                <div class="col-md-4">
-                    <img src="templates/template3.png" alt="Template 3" class="img-fluid template" data-template="template3.png">
+    <div class="container mt-4">
+        <h2 class="text-center mb-4">Photo Preview</h2>
+        <div class="preview-container">
+            <!-- Photo Preview Section -->
+            <div class="photo-preview-container">
+                <canvas id="previewCanvas"></canvas>
+                <div class="text-center mt-4">
+                    <button id="applyFilter" class="btn btn-primary">Apply Filter</button>
+                    <button id="addText" class="btn btn-secondary">Add Text</button>
+                    <form action="upload_photo.php" method="POST" enctype="multipart/form-data" class="mt-4 d-inline" id="saveForm">
+                        <input type="hidden" name="photo_path" id="photoPath" value="<?php echo htmlspecialchars($photoPath); ?>">
+                        <button type="submit" class="btn btn-success">Save Photo</button>
+                    </form>
+                    <button id="deletePhoto" class="btn btn-danger d-inline">Retake Photo</button>
+                    <button id="takeAnotherPhoto" class="btn btn-warning d-inline">Take Another Photo</button>
                 </div>
             </div>
-            <button id="applyTemplate" class="btn btn-success mt-3">Apply Selected Template</button>
+
+            <!-- Templates Section -->
+            <div class="templates-container">
+                <h4 class="text-center">Select a Template</h4>
+                <div id="templateList" class="text-center"></div>
+                <button id="applyTemplate" class="btn btn-success w-100 mt-3">Apply Selected Template</button>
+            </div>
         </div>
     </div>
 
@@ -100,66 +118,118 @@ unset($_SESSION['photo_data']); // Clear the session data after use
         </div>
         <p class="mt-3">Saving your photo...</p>
     </div>
-
+    <?php include 'footer.php'; ?>
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-    let selectedTemplate = '';
+        const sessionLayoutType = "<?php echo isset($_SESSION['layout_type']) ? $_SESSION['layout_type'] : 'all'; ?>";
+        let selectedTemplate = '';
 
-    document.querySelectorAll('.template').forEach(item => {
-        item.addEventListener('click', (e) => {
-            // Remove the 'selected' class from all templates
-            document.querySelectorAll('.template').forEach(template => {
-                template.classList.remove('selected');
-            });
+        const userPhotos = <?php echo json_encode($photos); ?>;
 
-            // Add the 'selected' class to the clicked template
-            e.target.classList.add('selected');
+        // Fetch templates from the JSON file
+        fetch('templates.json')
+            .then(response => response.json())
+            .then(templates => {
+                const templateContainer = document.getElementById('templateList');
+                const prevButton = document.createElement('button');
+                const nextButton = document.createElement('button');
+                let currentIndex = 0;
 
-            // Set the selected template
-            selectedTemplate = e.target.getAttribute('data-template');
+                // Create navigation buttons
+                prevButton.textContent = 'Previous';
+                nextButton.textContent = 'Next';
+                prevButton.classList.add('btn', 'btn-secondary', 'me-2');
+                nextButton.classList.add('btn', 'btn-secondary');
+
+                // Function to render the current template
+                const renderTemplate = () => {
+                    templateContainer.innerHTML = ''; // Clear existing template
+                    const template = templates[currentIndex];
+
+                    // Check if the template matches the session layout type
+                    if (sessionLayoutType === 'all' || template.type === sessionLayoutType) {
+                        const templateDiv = document.createElement('div');
+                        templateDiv.classList.add('template-container');
+                        templateDiv.innerHTML = `
+                            <img src="${template.path}" alt="Template" class="template" data-template="${template.path}" data-type="${template.type}">
+                        `;
+                        templateContainer.appendChild(templateDiv);
+
+                        // Attach click event to select the template
+                        const templateImg = templateDiv.querySelector('.template');
+                        templateImg.addEventListener('click', () => {
+                            document.querySelectorAll('.template').forEach(t => t.classList.remove('selected'));
+                            templateImg.classList.add('selected');
+                            selectedTemplate = templateImg.getAttribute('data-template');
+                        });
+                    }
+                };
+
+                // Handle navigation
+                prevButton.addEventListener('click', () => {
+                    currentIndex = (currentIndex - 1 + templates.length) % templates.length;
+                    renderTemplate();
+                });
+
+                nextButton.addEventListener('click', () => {
+                    currentIndex = (currentIndex + 1) % templates.length;
+                    renderTemplate();
+                });
+
+                // Add navigation buttons to the DOM
+                const navigationContainer = document.createElement('div');
+                navigationContainer.classList.add('text-center', 'mt-3');
+                navigationContainer.appendChild(prevButton);
+                navigationContainer.appendChild(nextButton);
+                templateContainer.parentElement.appendChild(navigationContainer);
+
+                // Initial render
+                renderTemplate();
+            })
+            .catch(error => console.error('Error loading templates:', error));
+
+        // Apply the selected template
+        document.getElementById('applyTemplate').addEventListener('click', () => {
+            if (selectedTemplate) {
+                const previewCanvas = document.getElementById('previewCanvas');
+                const previewContext = previewCanvas.getContext('2d');
+                const templateImage = new Image();
+                templateImage.src = selectedTemplate;
+
+                // Load the selected template image
+                templateImage.onload = () => {
+                    // Set canvas size to match the template
+                    previewCanvas.width = templateImage.width;
+                    previewCanvas.height = templateImage.height;
+
+                    // Draw the template on the canvas
+                    previewContext.drawImage(templateImage, 0, 0);
+
+                    // Draw the user's photo on top of the template
+                    const img = new Image();
+                    img.src = "<?php echo $photoPath; ?>";
+                    img.onload = () => {
+                        // Adjust the user's photo size and position
+                        const photoWidth = previewCanvas.width * 0.8; // Scale photo to 80% of canvas width
+                        const photoHeight = (img.height / img.width) * photoWidth; // Maintain aspect ratio
+                        const photoX = (previewCanvas.width - photoWidth) / 2; // Center the photo horizontally
+                        const photoY = (previewCanvas.height - photoHeight) / 2; // Center the photo vertically
+
+                        previewContext.drawImage(img, photoX, photoY, photoWidth, photoHeight);
+                    };
+                };
+            } else {
+                alert('Please select a template first!');
+            }
         });
-    });
 
-    document.getElementById('applyTemplate').addEventListener('click', () => {
-    if (selectedTemplate) {
-        const previewCanvas = document.getElementById('previewCanvas');
-        const previewContext = previewCanvas.getContext('2d');
-        const templateImage = new Image();
-        templateImage.src = selectedTemplate;
-
-        // Load the selected template image
-        templateImage.onload = () => {
-            // Set canvas size to match the template
-            previewCanvas.width = templateImage.width;
-            previewCanvas.height = templateImage.height;
-
-            // Draw the template on the canvas
-            previewContext.drawImage(templateImage, 0, 0);
-
-            // Draw the user's photo on top of the template
-            const img = new Image();
-            img.src = photoData; // Assuming photoData contains the photo's data URL
-            img.onload = () => {
-                // Adjust the user's photo size and position
-                const photoWidth = previewCanvas.width * 0.8; // Scale photo to 80% of canvas width
-                const photoHeight = (img.height / img.width) * photoWidth; // Maintain aspect ratio
-                const photoX = (previewCanvas.width - photoWidth) / 2; // Center the photo horizontally
-                const photoY = (previewCanvas.height - photoHeight) / 2; // Center the photo vertically
-
-                previewContext.drawImage(img, photoX, photoY, photoWidth, photoHeight);
-            };
-        };
-    } else {
-        alert('Please select a template first!');
-    }
-});
-
-        const photoData = "<?php echo $photo_data; ?>";
+        // Load the photo into the canvas
+        const photoPath = "<?php echo $photoPath; ?>";
         const previewCanvas = document.getElementById('previewCanvas');
         const previewContext = previewCanvas.getContext('2d');
         const img = new Image();
-        img.src = photoData;
+        img.src = photoPath;
         img.onload = () => {
             previewCanvas.width = img.width;
             previewCanvas.height = img.height;
@@ -205,38 +275,35 @@ unset($_SESSION['photo_data']); // Clear the session data after use
 
         // Save photo functionality
         document.getElementById('saveForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
+            e.preventDefault();
 
-    const saveLoadingAnimation = document.getElementById('saveLoadingAnimation');
-    saveLoadingAnimation.classList.remove('hidden');
+            const saveLoadingAnimation = document.getElementById('saveLoadingAnimation');
+            saveLoadingAnimation.classList.remove('hidden');
 
-    // Simulate loading for 2 seconds before proceeding
-    setTimeout(async () => {
-        const photoData = document.getElementById('photoData').value;
+            // Simulate loading for 2 seconds before proceeding
+            setTimeout(async () => {
+                const photoPath = document.getElementById('photoPath').value;
 
-        try {
-            const response = await fetch('upload_photo.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `photo_data=${encodeURIComponent(photoData)}`
-            });
+                try {
+                    const response = await fetch('upload_photo.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: `photo_path=${encodeURIComponent(photoPath)}`
+                    });
 
-            saveLoadingAnimation.classList.add('hidden');
+                    saveLoadingAnimation.classList.add('hidden');
 
-            if (response.ok) {
-                // alert('Photo successfully saved to the database!');
-                window.location.href = 'gallery.php';
-            } else {
-                // alert('Failed to save the photo. Please try again.');
-                console.error('Error:', await response.text());
-            }
-        } catch (error) {
-            saveLoadingAnimation.classList.add('hidden');
-            // alert('An error occurred while saving the photo. Please try again.');
-            console.error('Error:', error);
-        }
-    }, 2000);
-});
+                    if (response.ok) {
+                        window.location.href = 'gallery.php';
+                    } else {
+                        console.error('Error:', await response.text());
+                    }
+                } catch (error) {
+                    saveLoadingAnimation.classList.add('hidden');
+                    console.error('Error:', error);
+                }
+            }, 2000);
+        });
     </script>
 </body>
 </html>
