@@ -1,5 +1,5 @@
 <?php
-session_start();
+include 'auth.php';
 if (!isset($_SESSION['photo_data'])) {
     header("Location: dashboard.php"); // Redirect back to dashboard if no photo data
     exit();

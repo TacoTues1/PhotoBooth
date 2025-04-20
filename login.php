@@ -1,4 +1,10 @@
-<!-- filepath: c:\xampp\htdocs\PhotoBooth\login.php -->
+<?php
+session_start();
+if (isset($_SESSION['user_id']) && !empty($_SESSION['user_id'])) {
+    header("Location: dashboard.php");
+    exit();
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,7 +18,6 @@
   <!-- Bootstrap (optional, used for layout only) -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
-  <!-- Custom Button Styles -->
   <style>
     button {
       font-family: 'Montserrat', sans-serif;

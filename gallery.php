@@ -1,5 +1,6 @@
 <?php
-session_start();
+include 'auth.php'; // Include authentication check
+
 $user_id = $_SESSION['user_id'];
 
 $conn = new mysqli('localhost', 'root', '', 'photobooth');
