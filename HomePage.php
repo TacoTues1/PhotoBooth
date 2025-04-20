@@ -74,6 +74,24 @@ $conn->close();
       width: 3rem;
       height: 3rem;
     }
+
+    .layout-option {
+      border: 2px solid transparent;
+      border-radius: 10px;
+      transition: border-color 0.3s ease;
+    }
+
+    .layout-option.selected {
+      border-color: #007bff; /* Highlight selected layout with blue border */
+    }
+
+    .layout-option img {
+      transition: transform 0.3s ease;
+    }
+
+    .layout-option img:hover {
+      transform: scale(1.1); /* Slight zoom effect on hover */
+    }
   </style>
 </head>
 <body>
@@ -86,17 +104,22 @@ $conn->close();
   <!-- Layout Selection -->
   <div id="layoutSelection">
     <h2 class="text-center mb-4">✨ Choose Your Layout</h2>
-    <div class="text-center mb-4">
-      <label for="layoutSelect" class="form-label">Select Layout:</label>
-      <select id="layoutSelect" class="form-select w-50 mx-auto shadow">
-        <option value="1">1 Photo</option>
-        <option value="2">2 Photos</option>
-        <option value="3">3 Photos</option>
-        <option value="4" selected>4 Photos</option>
-      </select>
+    <div class="d-flex justify-content-center flex-wrap gap-3">
+      <?php
+        // Load the JSON file
+        $jsonFile = __DIR__ . '/layouts.json';
+        $layouts = json_decode(file_get_contents($jsonFile), true);
+
+        // Loop through the layouts and display them
+        foreach ($layouts as $layout) {
+            echo '<div class="layout-option" data-layout="' . $layout['id'] . '" data-type="' . $layout['type'] . '">';
+            echo '<img src="' . $layout['image'] . '" alt="' . $layout['name'] . '" class="img-fluid rounded shadow" style="width: 150px; cursor: pointer;">';
+            echo '</div>';
+        }
+      ?>
     </div>
-    <div class="text-center">
-      <button id="continueButton" class="btn btn-primary btn-lg shadow">Continue</button>
+    <div class="text-center mt-4">
+      <button id="continueButton" class="btn btn-primary btn-lg shadow" disabled>Continue</button>
     </div>
   </div>
 
@@ -215,6 +238,7 @@ $conn->close();
         }
       } else {
         captureButton.disabled = false;
+        generateTemplates(); // Generate templates based on the selected layout type
       }
     }
 
@@ -222,54 +246,85 @@ $conn->close();
   });
 
   function capturePhoto() {
-    if (photoLayout.children.length < maxPhotos) {
-      const canvas = document.createElement('canvas');
-      canvas.width = webcam.videoWidth;
-      canvas.height = webcam.videoHeight;
-      const context = canvas.getContext('2d');
-      context.drawImage(webcam, 0, 0, canvas.width, canvas.height);
+  if (photoLayout.children.length < maxPhotos) {
+    const canvas = document.createElement('canvas');
+    canvas.width = webcam.videoWidth;
+    canvas.height = webcam.videoHeight;
+    const context = canvas.getContext('2d');
+    context.drawImage(webcam, 0, 0, canvas.width, canvas.height);
 
-      const img = document.createElement('img');
-      img.src = canvas.toDataURL('image/png');
-      photoLayout.appendChild(img);
+    const img = document.createElement('img');
+    img.src = canvas.toDataURL('image/png');
+    photoLayout.appendChild(img);
 
-      if (photoLayout.children.length === maxPhotos) {
-        const combinedCanvas = document.createElement('canvas');
-        combinedCanvas.width = webcam.videoWidth;
-        combinedCanvas.height = webcam.videoHeight * maxPhotos;
-        const combinedContext = combinedCanvas.getContext('2d');
+    // Save each photo to the server
+    const photoDataURL = canvas.toDataURL('image/png');
+    fetch('save_photo.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ photo_data: photoDataURL })
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Photo saved:', data);
 
-        const images = Array.from(photoLayout.children);
-        let loadedCount = 0;
+        // Check if all photos are captured
+        if (photoLayout.children.length === maxPhotos) {
+          console.log('All photos captured. Redirecting to photo_preview.php...');
+          cameraSection.classList.add('hidden');
+          loadingAnimation.classList.remove('hidden');
 
-        images.forEach((child, index) => {
-          const photo = new Image();
-          photo.src = child.src;
-          photo.onload = () => {
-            combinedContext.drawImage(photo, 0, index * webcam.videoHeight, webcam.videoWidth, webcam.videoHeight);
-            loadedCount++;
-            if (loadedCount === maxPhotos) {
-              cameraSection.classList.add('hidden');
-              loadingAnimation.classList.remove('hidden');
-
-              const photoDataURL = combinedCanvas.toDataURL('image/png');
-              photoDataInput.value = photoDataURL;
-
-              setTimeout(() => {
-                fetch('save_photo_data.php', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ photo_data: photoDataURL })
-                }).then(() => {
-                  window.location.href = 'photo_preview.php';
-                });
-              }, 2000);
-            }
-          };
-        });
-      }
-    }
+          setTimeout(() => {
+            window.location.href = 'photo_preview.php';
+          }, 2000);
+        }
+      })
+      .catch(error => {
+        console.error('Error saving photo:', error);
+      });
   }
+}
+
+  document.addEventListener('DOMContentLoaded', () => {
+  const layoutOptions = document.querySelectorAll('.layout-option');
+  const continueButton = document.getElementById('continueButton');
+  const layoutSelection = document.getElementById('layoutSelection');
+  const cameraSection = document.getElementById('cameraSection');
+  let selectedLayout = null;
+  let selectedLayoutType = null;
+
+  layoutOptions.forEach(option => {
+    option.addEventListener('click', () => {
+      // Remove 'selected' class from all options
+      layoutOptions.forEach(opt => opt.classList.remove('selected'));
+
+      // Add 'selected' class to the clicked option
+      option.classList.add('selected');
+
+      // Enable the continue button
+      continueButton.disabled = false;
+
+      // Store the selected layout and its type
+      selectedLayout = option.getAttribute('data-layout');
+      selectedLayoutType = option.getAttribute('data-type');
+    });
+  });
+
+  continueButton.addEventListener('click', () => {
+    if (selectedLayout) {
+      console.log('Selected Layout:', selectedLayout);
+      console.log('Selected Layout Type:', selectedLayoutType);
+
+      // Set the number of takes to 8
+      maxPhotos = 8;
+
+      // Hide the layout selection and show the camera section
+      layoutSelection.classList.add('hidden');
+      cameraSection.classList.remove('hidden');
+    }
+  });
+});
 </script>
+
 </body>
 </html>
