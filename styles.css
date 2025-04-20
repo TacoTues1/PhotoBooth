@@ -1,43 +1,46 @@
 body {
-    background: linear-gradient(to right, #6a11cb, #2575fc);
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin: 0;
-}
-
-.container {
-    background: white;
-    padding: 2rem;
-    border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-    animation: fadeIn 0.7s ease-in-out;
-    width: 100%;
-    max-width: 600px;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.btn-primary {
-    background: #6a11cb;
-    border: none;
-}
-
-.btn-primary:hover {
-    background: #2575fc;
-}
+    background: linear-gradient(135deg, #f0f4ff, #d0e8ff);
+    font-family: 'Poppins', sans-serif; /* Use Poppins for the body */
+    overflow-x: hidden;
+    height: 100vh; 
+  }
 
 .navbar {
-    background: white;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    display: flex;
+    justify-content: center;
+    height: 50px;
+    padding: 0.5rem 1rem;
+    background-color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.navbar-nav .nav-item .nav-link {
+    font-size: 0.9rem;
+    padding: 0.5rem 0.75rem;
+}
+
+.navbar-toggler {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+}
+
+.btn-outline-danger {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+    border-width: 1px;
+}
+
+.btn-outline-danger:hover {
+    background-color: #dc3545;
+    color: #ffffff;
+}
+
+.logout-container {
+    display: flex;
+    justify-content: center;
 }

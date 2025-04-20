@@ -15,13 +15,8 @@ $conn->close();
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>PhotoBooth Dashboard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="styles.css">
   <style>
-    body {
-      background: linear-gradient(135deg, #f0f4ff, #d0e8ff);
-      font-family: 'Segoe UI', sans-serif;
-      overflow-x: hidden;
-    }
-
     h2 {
       animation: fadeInDown 1s ease-in-out;
     }
@@ -75,13 +70,6 @@ $conn->close();
       0%, 100% { transform: scale(1); }
       50% { transform: scale(1.1); }
     }
-
-    .navbar-brand {
-      font-weight: bold;
-      font-size: 1.5rem;
-      color: #0056b3 !important;
-    }
-
     .spinner-border {
       width: 3rem;
       height: 3rem;
@@ -91,23 +79,7 @@ $conn->close();
 <body>
 
 <!-- Navigation -->
-<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="dashboard.php">📸 PhotoBooth</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav me-auto">
-        <li class="nav-item"><a class="nav-link active" href="dashboard.php">Dashboard</a></li>
-        <li class="nav-item"><a class="nav-link" href="gallery.php">Gallery</a></li>
-      </ul>
-      <form action="logout.php" method="POST">
-        <button type="submit" class="btn btn-outline-danger">Logout</button>
-      </form>
-    </div>
-  </div>
-</nav>
+<?php include 'Header.php'; ?>
 
 <div class="container mt-5">
 

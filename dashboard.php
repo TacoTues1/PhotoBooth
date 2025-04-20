@@ -16,53 +16,8 @@ $conn->close();
   <title>PhotoBooth Templates</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
   <style>
-    body {
-      background: linear-gradient(135deg, #f0f4ff, #d0e8ff);
-      font-family: 'Poppins', sans-serif; /* Use Poppins for the body */
-      overflow-x: hidden;
-      height: 100vh; 
-    }
-    .navbar {
-    display: flex;
-    justify-content: center;
-    height: 50px; 
-    padding: 0.5rem 1rem; /* Reduce padding for a smaller height */
-    background-color: #ffffff; /* Keep the white background */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
-    }
-
-    .navbar-brand {
-      font-size: 1.2rem; /* Reduce font size for the brand */
-      font-weight: 600; /* Keep it bold but slightly smaller */
-    }
-
-    .navbar-nav .nav-item .nav-link {
-      font-size: 0.9rem; /* Reduce font size for the links */
-      padding: 0.5rem 0.75rem; /* Adjust padding for smaller height */
-    }
-
-    .navbar-toggler {
-      padding: 0.25rem 0.5rem; /* Reduce padding for the toggler button */
-      font-size: 0.8rem; /* Adjust font size for the toggler icon */
-    }
-    .navbar-nav .nav-item .nav-link:hover {
-      color: #0056b3; /* Blue color on hover */
-    }
-    .btn-outline-danger {
-    padding: 0.25rem 0.5rem; /* Reduce padding for a smaller button */
-    font-size: 0.8rem; /* Reduce font size */
-    border-width: 1px; /* Adjust border thickness */
-    }
-
-    .btn-outline-danger:hover {
-    background-color: #dc3545; /* Red background on hover */
-    color: #ffffff; /* White text on hover */
-    }
-    .logout-container {
-    display: flex;
-    justify-content: center;
-    }   
     /* Sliding Templates Container */
     .template-train-container {
     position: relative;
