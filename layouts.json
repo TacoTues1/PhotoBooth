@@ -1,0 +1,26 @@
+[
+    {
+      "id": 1,
+      "name": "Layout 1",
+      "image": "Layouts/Layout1.png",
+      "type": "1X4"
+    },
+    {
+      "id": 2,
+      "name": "Layout 2",
+      "image": "Layouts/Layout2.png",
+      "type": "2X3"
+    },
+    {
+      "id": 3,
+      "name": "Layout 3",
+      "image": "Layouts/Layout3.png",
+      "type": "2X2"
+    },
+    {
+      "id": 4,
+      "name": "Layout 4",
+      "image": "Layouts/Layout4.png",
+      "type": "1X3"
+    }
+  ]
